@@ -54,6 +54,8 @@ jobs:
           -H "Authorization: Bearer ${{ steps.action-github-app-token-test-repo.outputs.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/${{ env.TEST_ORG_NAME }}/${{ env.TEST_REPO_NAME }}/actions/workflows/cicd.yml | jq '.id')
+
+          echo "Worfklow id is $workflowId"
           
           curl -L \
           -X POST \
