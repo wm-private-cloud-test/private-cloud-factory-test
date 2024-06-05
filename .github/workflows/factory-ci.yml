@@ -48,6 +48,8 @@ jobs:
           
       - name: Trigger CI/CD Workflow
         run: |
+          # For now just wait 30 seconds to have GitHub properly setup the repository. Improve by adding polling 
+          sleep 30
           curl -L \
           -X GET \
           -H "Accept: application/vnd.github+json" \
