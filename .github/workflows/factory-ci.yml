@@ -22,7 +22,7 @@ jobs:
           app-id: ${{ secrets.FACTORY_TEST_APP_ID }}
           private-key: ${{ secrets.FACTORY_TEST_APP_PEM }}
           github-api-url: "https://api.github.com"
-          owner: "wm-private-cloud-test"
+          owner: "${{ env.TEST_ORG_NAME }}"
           repositories: "private-cloud-factory-test"
           
       - name: Create Repository from Factory Template
@@ -35,12 +35,23 @@ jobs:
           https://api.github.com/repos/wm-private-cloud/private-cloud-factory/generate \
           -d '{"owner":"${{ env.TEST_ORG_NAME }}","name":"${{ env.TEST_REPO_NAME }}","description":"Test Factory Repository","include_all_branches":false,"private":false}'
 
+      
+      - name: Get GitHub App Token
+        id: action-github-app-token-test-repo
+        uses: actions/create-github-app-token@v1.9.3
+        with:
+          app-id: ${{ secrets.FACTORY_TEST_APP_ID }}
+          private-key: ${{ secrets.FACTORY_TEST_APP_PEM }}
+          github-api-url: "https://api.github.com"
+          owner: "${{ env.TEST_ORG_NAME }}"
+          repositories: "${{ env.TEST_REPO_NAME }}"
+          
       - name: Trigger CI/CD Workflow
         run: |
           curl -L \
           -X POST \
           -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ steps.action-github-app-token.outputs.token }}" \
+          -H "Authorization: Bearer ${{ steps.action-github-app-token-test-repo.outputs.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/${{ env.TEST_ORG_NAME }}/${{ env.TEST_REPO_NAME }}/actions/workflows/cicd.yml/dispatches \
           -d '{"ref":"main"}'
