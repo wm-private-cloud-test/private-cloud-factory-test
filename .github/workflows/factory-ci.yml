@@ -95,10 +95,19 @@ jobs:
   verify-successful-deployment:
     runs-on: ubuntu-latest
     needs: trigger-cicd-worfklow
+    env:
+      KUBECONFIG: ${{ github.workspace }}/${{ github.run_number }}-kubeconf
     steps:
+      - name: Authenticate against Kubernetes cluster
+        run: echo "${KUBE_CONFIG}" > ${KUBECONFIG}
+        
       - name: Check deployment status
         run: |
           (helm status msr | grep "STATUS: deployed") && echo Successful verification || (echo Verification failed - deployment status is not "deployed" && exit 1)
+     
+      - name: Cleanup runner
+        if: always()
+        run: rm -rf ${KUBECONFIG}
         
   cleanup-private-cloud-repository:
     if: false #always() #TODO: For now always delete, then delete only on success
