@@ -21,8 +21,8 @@ jobs:
         with:
           github-token: ${{ github.token }}
           ms-teams-webhook-uri: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
-          notification-summary: Private Cloud Factory Test
-          notification-color: 17a2b8
+          notification-summary: "[FAILURE] Private Cloud Factory Test"
+          notification-color: d60c36
           timezone: Europe/Sofia
           verbose-logging: true
           
