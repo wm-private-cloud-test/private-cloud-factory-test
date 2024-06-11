@@ -9,6 +9,7 @@ on:
 env:
   TEST_ORG_NAME: wm-private-cloud-test
   TEST_REPO_NAME: factory-test-${{ github.run_number }}
+  DEPLOYMENT_RELEASE_NAME: factory-test-${{ github.run_number }}
 jobs:
   create-private-cloud-repository:
     runs-on: ubuntu-latest
@@ -60,7 +61,7 @@ jobs:
           -H "Authorization: Bearer ${{ steps.action-github-app-token-test-repo.outputs.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/${{ env.TEST_ORG_NAME }}/${{ env.TEST_REPO_NAME }}/actions/workflows/cicd.yml/dispatches \
-          -d '{"ref":"main"}'
+          -d '{"ref":"main","inputs":{"deploymentReleaseName":"${{ env.DEPLOYMENT_RELEASE_NAME }}"}}'
       
       - name: Wait for Workflow Completion
         run: |
@@ -103,15 +104,15 @@ jobs:
         
       - name: Check deployment status
         run: |
-          (helm status msr | grep "STATUS: deployed") && echo Successful verification || (echo Verification failed - deployment status is not "deployed" && exit 1)
+          (helm status ${{ env.DEPLOYMENT_RELEASE_NAME }} | grep "STATUS: deployed") && echo Successful verification || (echo Verification failed - deployment status is not "deployed" && exit 1)
      
+      - name: Cleanup deployment
+        if: always()
+        run: helm uninstall ${{ env.DEPLOYMENT_RELEASE_NAME }} || true
+        
       - name: Cleanup runner
         if: always()
         run: rm -rf ${KUBECONFIG}
-
-      - name: Cleanup deployment
-        if: always()
-        run: helm uninstall msr || true
         
   cleanup-private-cloud-repository:
     if: false #always() #TODO: For now always delete, then delete only on success
