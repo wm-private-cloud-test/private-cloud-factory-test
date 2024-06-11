@@ -42,6 +42,10 @@ jobs:
   trigger-cicd-worfklow:
     runs-on: ubuntu-latest
     needs: create-private-cloud-repository
+    strategy:
+      matrix: # Ensure idempotent execution by running the workflow 2 times with the same data. In this case the second run should just update the deployment and finish successfully, too
+        attempts: [first-workflow-run, idempotent-workflow-run]
+      max-parallel: 1 # Ensure the runs are sequential even if there is more than one runner available
     steps:
       - name: Get GitHub App Token
         id: action-github-app-token-test-repo
