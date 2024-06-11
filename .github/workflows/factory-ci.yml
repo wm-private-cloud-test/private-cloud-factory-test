@@ -16,6 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Notify
+        uses: jdcargile/ms-teams-notification@v1.4
+        with:
+          github-token: ${{ github.token }}
+          ms-teams-webhook-uri: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
+          notification-summary: Private Cloud Factory Test
+          notification-color: 17a2b8
+          timezone: Europe/Sofia
+          verbose-logging: true
+          
       - name: Get GitHub App Token
         id: action-github-app-token
         uses: actions/create-github-app-token@v1.9.3
