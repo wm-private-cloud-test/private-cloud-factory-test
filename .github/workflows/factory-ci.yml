@@ -115,7 +115,7 @@ jobs:
         run: rm -rf ${KUBECONFIG}
         
   cleanup-private-cloud-repository:
-    if: false #always() #TODO: For now always delete, then delete only on success
+    if: always() #TODO: For now always delete, then delete only on success
     runs-on: ubuntu-latest
     needs: verify-successful-deployment
     steps:
