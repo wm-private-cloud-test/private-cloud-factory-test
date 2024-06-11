@@ -99,7 +99,7 @@ jobs:
       KUBECONFIG: ${{ github.workspace }}/${{ github.run_number }}-kubeconf
     steps:
       - name: Authenticate against Kubernetes cluster
-        run: echo "${KUBE_CONFIG}" > ${KUBECONFIG}
+        run: echo "${{ secrets.KUBE_CONFIG }}" > ${KUBECONFIG}
         
       - name: Check deployment status
         run: |
@@ -108,6 +108,10 @@ jobs:
       - name: Cleanup runner
         if: always()
         run: rm -rf ${KUBECONFIG}
+
+      - name: Cleanup deployment
+        if: always()
+        run: helm uninstall msr || true
         
   cleanup-private-cloud-repository:
     if: false #always() #TODO: For now always delete, then delete only on success
