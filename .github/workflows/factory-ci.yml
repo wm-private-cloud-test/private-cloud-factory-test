@@ -12,6 +12,7 @@ env:
   TEST_ORG_NAME: wm-private-cloud-test
   TEST_REPO_NAME: factory-test-${{ github.run_number }}
   DEPLOYMENT_RELEASE_NAME: factory-test-${{ github.run_number }}
+  DOCKER_IMAGE_NAME: "msr:factory-test-${{ github.run_number }}"
 jobs:
   create-private-cloud-repository:
     runs-on: ubuntu-latest
@@ -67,7 +68,7 @@ jobs:
           -H "Authorization: Bearer ${{ steps.action-github-app-token-test-repo.outputs.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/${{ env.TEST_ORG_NAME }}/${{ env.TEST_REPO_NAME }}/actions/workflows/cicd.yml/dispatches \
-          -d '{"ref":"main","inputs":{"wmPackages":"WmJDBCAdapter","customPackages":"Fibonacci","customPackagesOrgUrl":"https://github.com/wm-private-cloud-test","deploymentReleaseName":"${{ env.DEPLOYMENT_RELEASE_NAME }}"}}'
+          -d '{"ref":"main","inputs":{"dockerImage":"${{ env.DOCKER_IMAGE_NAME }}","wmPackages":"WmJDBCAdapter","customPackages":"Fibonacci","customPackagesOrgUrl":"https://github.com/wm-private-cloud-test","deploymentReleaseName":"${{ env.DEPLOYMENT_RELEASE_NAME }}"}}'
       
       - name: Wait for Workflow Completion
         run: |
@@ -104,6 +105,19 @@ jobs:
               sleep "$interval"
           done
 
+  verify-successful-image-creation:
+    runs-on: ubuntu-latest
+    needs: trigger-cicd-worfklow
+    steps:
+      - name: Check image 
+        run: |
+          echo "|Check|Status|" >> $GITHUB_STEP_SUMMARY
+          echo "|:-:|:-:|" >> $GITHUB_STEP_SUMMARY
+          docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }} ${{ vars.DOCKER_REGISTRY }}
+          expectedImage=${{ vars.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}
+          docker pull $expectedImage && echo "|Expected $expectedImage image available|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY || (echo "|Expected $expectedImage image available|:x:|" >> $GITHUB_STEP_SUMMARY && exit 1)
+          
+        
   verify-successful-deployment:
     runs-on: ubuntu-latest
     needs: trigger-cicd-worfklow
@@ -184,11 +198,11 @@ jobs:
       - name: Cleanup runner
         if: always()
         run: rm -rf ${KUBECONFIG}
-        
+           
   cleanup-private-cloud-repository:
     if: always() #TODO: For now always delete, then delete only on success
     runs-on: ubuntu-latest
-    needs: verify-successful-deployment
+    needs: [verify-successful-deployment, verify-successful-image-creation]
     steps:
       - name: Get GitHub App Token
         id: action-github-app-token-test-repo
