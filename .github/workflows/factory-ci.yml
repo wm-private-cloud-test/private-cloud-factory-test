@@ -112,17 +112,18 @@ jobs:
         run: |
           (helm status ${{ env.DEPLOYMENT_RELEASE_NAME }} | grep "STATUS: deployed") && echo Successful verification || (echo Verification failed - deployment status is not "deployed" && exit 1)
       
-      - name: Check endpoint
+      - name: Check endpoint running and installed packages
         run: |
           LOCAL_PORT=`expr ${{ github.run_number }} + 5000`
           export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=microservicesruntime,app.kubernetes.io/instance=${{ env.DEPLOYMENT_RELEASE_NAME }}" -o jsonpath="{.items[0].metadata.name}")
           export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
           kubectl --namespace default port-forward $POD_NAME $LOCAL_PORT:$CONTAINER_PORT &
-          URL="http://localhost:$LOCAL_PORT"
+          BASE_URL="http://localhost:$LOCAL_PORT"
+          URL=$BASE_URL
           TIMEOUT=300
           INTERVAL=5
           check_endpoint() {
-            STATUS_CODE=$(curl --silent --insecure --write-out "%{http_code}" --output /dev/null "$URL")
+            STATUS_CODE=$(curl --silent --insecure --write-out "%{http_code}" --output /dev/null --user "${{ secrets.APP_USERNAME }}:${{ secrets.APP_PASSWORD }}" "$URL")
             echo "Current status code is $STATUS_CODE"
             if [ "$STATUS_CODE" -eq 200 ]; then
               return 0
@@ -143,6 +144,23 @@ jobs:
             sleep "$INTERVAL"
           done
           echo "Service is up and running at $URL"
+
+          URL=${BASE_URL}/admin/package/Fibonacci
+          if check_endpoint; then
+            echo "Custom Fibonacci package is available"
+          else
+            echo "Custom Fibonacci package is NOT available"
+            exit 1
+          fi
+
+          URL=${BASE_URL}/admin/package/WmJDBCAdapter
+          if check_endpoint; then
+            echo "WmJDBCAdapter package is available"
+          else
+            echo "WmJDBCAdapter package is NOT available"
+            exit 1
+          fi
+          
 
       - name: Cleanup deployment
         if: always()
