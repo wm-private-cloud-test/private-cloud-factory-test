@@ -71,6 +71,8 @@ jobs:
       
       - name: Wait for Workflow Completion
         run: |
+          echo "|Action|Status|" >> $GITHUB_STEP_SUMMARY
+          echo "|:-:|:-:|" >> $GITHUB_STEP_SUMMARY
           url="https://api.github.com/repos/${{ env.TEST_ORG_NAME }}/${{ env.TEST_REPO_NAME }}/actions/runs"
           interval=10
           timeout=$((30 * 60))
@@ -80,6 +82,7 @@ jobs:
               elapsedTime=$((SECONDS - startTime))
               if [ "$elapsedTime" -ge "$timeout" ]; then
                   echo "Timeout reached after $((elapsedTime / 60)) minutes. Exiting with status 1."
+                  echo "|Workflow successful|:alarm_clock:|" >> $GITHUB_STEP_SUMMARY
                   exit 1
               fi
               response=$(curl -L -f -X GET -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ steps.action-github-app-token-test-repo.outputs.token }}" -H "X-GitHub-Api-Version: 2022-11-28" "$url")
@@ -89,9 +92,11 @@ jobs:
                   echo "Status is completed for the ${{ matrix.workflow-run-index }} workflow run."
                   if [ "$conclusion" == "success" ]; then
                       echo "Conclusion is success. Exiting with status 0."
+                      echo "|Workflow successful|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY
                       exit 0
                   else
                       echo "Conclusion is $conclusion. Exiting with status 1."
+                      echo "|Workflow successful|:x:|" >> $GITHUB_STEP_SUMMARY
                       exit 1
                   fi
               fi
@@ -142,14 +147,14 @@ jobs:
             ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
             if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
               echo "Timeout reached. Service is not available at $URL"
-              echo "|Application running on $URL|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY
+              echo "|Application running on $URL|:x:|" >> $GITHUB_STEP_SUMMARY
               exit 1
             fi
             echo "Waiting for the service to start... ($ELAPSED_TIME seconds elapsed)"
             sleep "$INTERVAL"
           done
           echo "Service is up and running at $URL"
-          echo "|Application running on $URL|:x:|" >> $GITHUB_STEP_SUMMARY
+          echo "|Application running on $URL|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY
 
           URL=${BASE_URL}/admin/package/Fibonacci
           if check_endpoint; then
