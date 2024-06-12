@@ -111,7 +111,38 @@ jobs:
       - name: Check deployment status
         run: |
           (helm status ${{ env.DEPLOYMENT_RELEASE_NAME }} | grep "STATUS: deployed") && echo Successful verification || (echo Verification failed - deployment status is not "deployed" && exit 1)
-     
+      
+      - name: Check endpoint
+        run: |
+          LOCAL_PORT=`expr ${{ github.run_number }} + 4000`
+          export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=microservicesruntime,app.kubernetes.io/instance=${{ env.DEPLOYMENT_RELEASE_NAME }}" -o jsonpath="{.items[0].metadata.name}")
+          export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+          kubectl --namespace default port-forward $POD_NAME $LOCAL_PORT:$CONTAINER_PORT
+          URL="https://localhost:$LOCAL_PORT"
+          TIMEOUT=300
+          INTERVAL=5
+          check_endpoint() {
+            STATUS_CODE=$(curl --silent --insecure --write-out "%{http_code}" --output /dev/null "$URL")
+            echo "Current status code is $STATUS_CODE"
+            if [ "$STATUS_CODE" -eq 200 ]; then
+              return 0
+            else
+              return 1
+            fi
+          }  
+          START_TIME=$(date +%s)
+          while ! check_endpoint; do
+            CURRENT_TIME=$(date +%s)
+            ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+            if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
+              echo "Timeout reached. Service is not available at $URL"
+              exit 1
+            fi
+            echo "Waiting for the service to start... ($ELAPSED_TIME seconds elapsed)"
+            sleep "$INTERVAL"
+          done
+          echo "Service is up and running at $URL"
+
       - name: Cleanup deployment
         if: always()
         run: helm uninstall ${{ env.DEPLOYMENT_RELEASE_NAME }} || true
