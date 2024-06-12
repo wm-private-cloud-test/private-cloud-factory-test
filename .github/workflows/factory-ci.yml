@@ -110,7 +110,9 @@ jobs:
         
       - name: Check deployment status
         run: |
-          (helm status ${{ env.DEPLOYMENT_RELEASE_NAME }} | grep "STATUS: deployed") && echo Successful verification || (echo Verification failed - deployment status is not "deployed" && exit 1)
+          echo "|Check|Status|" >> $GITHUB_STEP_SUMMARY
+          echo "|:-:|:-:|" >> $GITHUB_STEP_SUMMARY
+          (helm status ${{ env.DEPLOYMENT_RELEASE_NAME }} | grep "STATUS: deployed") && (echo Successful verification && echo "|Deployed application|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY) || (echo Verification failed - deployment status is not "deployed" && echo "|Deployment status|:x:|" >> $GITHUB_STEP_SUMMARY && exit 1)
       
       - name: Check endpoint running and installed packages
         run: |
@@ -138,26 +140,32 @@ jobs:
             ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
             if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
               echo "Timeout reached. Service is not available at $URL"
+              echo "|Application running on $URL|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY
               exit 1
             fi
             echo "Waiting for the service to start... ($ELAPSED_TIME seconds elapsed)"
             sleep "$INTERVAL"
           done
           echo "Service is up and running at $URL"
+          echo "|Application running on $URL|:x:|" >> $GITHUB_STEP_SUMMARY
 
           URL=${BASE_URL}/admin/package/Fibonacci
           if check_endpoint; then
             echo "Custom Fibonacci package is available"
+            echo "|Custom Fibonacci package is available at $URL|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY
           else
             echo "Custom Fibonacci package is NOT available"
+             echo "|Custom Fibonacci package is available at $URL|:x:|" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
           URL=${BASE_URL}/admin/package/WmJDBCAdapter
           if check_endpoint; then
             echo "WmJDBCAdapter package is available"
+             echo "|WmJDBCAdapter package is available at $URL|:white_check_mark:|" >> $GITHUB_STEP_SUMMARY
           else
             echo "WmJDBCAdapter package is NOT available"
+            echo "|WmJDBCAdapter package is available at $URL|:x:|" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
           
