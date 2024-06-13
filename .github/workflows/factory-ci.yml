@@ -12,7 +12,7 @@ env:
   TEST_ORG_NAME: wm-private-cloud-test
   TEST_REPO_NAME: factory-test-${{ github.run_number }}
   DEPLOYMENT_RELEASE_NAME: factory-test-${{ github.run_number }}
-  DOCKER_IMAGE_NAME: "msr:factory-test"
+  DOCKER_IMAGE_NAME: "msr:factory-test-${{ github.run_number }}"
 jobs:
   create-private-cloud-repository:
     runs-on: ubuntu-latest
