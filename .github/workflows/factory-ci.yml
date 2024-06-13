@@ -209,7 +209,7 @@ jobs:
         with:
           azcliversion: 2.30.0
           inlineScript: |
-            az acr repository delete --name ${{ vars.DOCKER_REGISTRY }} --image ${{ env.DOCKER_IMAGE_NAME }} --username ${{ secrets.DOCKER_USER }} --password ${{ secrets.DOCKER_PASSWORD }}
+            az acr repository delete --name ${{ vars.DOCKER_REGISTRY }} --image ${{ env.DOCKER_IMAGE_NAME }} --username ${{ secrets.DOCKER_USER }} --password ${{ secrets.DOCKER_PASSWORD }} --yes
       
       - name: Get GitHub App Token
         id: action-github-app-token-test-repo
