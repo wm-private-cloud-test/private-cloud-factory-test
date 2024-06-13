@@ -199,11 +199,18 @@ jobs:
         if: always()
         run: rm -rf ${KUBECONFIG}
            
-  cleanup-private-cloud-repository:
+  cleanup-private-cloud-image-and-repository:
     if: always() #TODO: For now always delete, then delete only on success
     runs-on: ubuntu-latest
     needs: [verify-successful-deployment, verify-successful-image-creation]
     steps:
+      - name: Cleanup image
+        uses: azure/cli@v2
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az acr repository delete --name ${{ vars.DOCKER_REGISTRY }} --image ${{ env.DOCKER_IMAGE_NAME }} --username ${{ secrets.DOCKER_USER }} --password ${{ secrets.DOCKER_PASSWORD }}
+      
       - name: Get GitHub App Token
         id: action-github-app-token-test-repo
         uses: actions/create-github-app-token@v1.9.3
@@ -226,7 +233,7 @@ jobs:
   notify-on-failure:
     if: failure()
     runs-on: ubuntu-latest
-    needs: cleanup-private-cloud-repository
+    needs: cleanup-private-cloud-image-and-repository
     steps:
       - name: Notify
         uses: jdcargile/ms-teams-notification@v1.4
