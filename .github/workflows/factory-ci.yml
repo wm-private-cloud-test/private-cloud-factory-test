@@ -213,6 +213,7 @@ jobs:
       
       - name: Get GitHub App Token
         id: action-github-app-token-test-repo
+        if: always()
         uses: actions/create-github-app-token@v1.9.3
         with:
           app-id: ${{ secrets.FACTORY_TEST_APP_ID }}
@@ -222,6 +223,7 @@ jobs:
           repositories: "${{ env.TEST_REPO_NAME }}"
           
       - name: Delete Repository
+        if: always()
         run: |
           curl -L -f \
           -X DELETE \
